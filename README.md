@@ -1,37 +1,47 @@
 # NestJS Microservices
 
-A microservices architecture built with [NestJS](https://nestjs.com/) featuring multiple services communicating via TCP and RabbitMQ.
+A microservices architecture built with [NestJS](https://nestjs.com/) featuring multiple services communicating via RabbitMQ, with Clerk authentication and MongoDB.
 
 ## Architecture
 
 ```
-┌─────────────────┐
-│     Gateway     │ ← HTTP API (Port 3000)
-│   (REST API)    │
-└────────┬────────┘
-         │
-    ┌────┴────┬─────────────┐
-    │         │             │
-    ▼         ▼             ▼
-┌───────┐ ┌───────┐   ┌─────────┐
-│Catalog│ │ Media │   │ Search  │
-│ (RMQ) │ │ (TCP) │   │  (TCP)  │
-└───────┘ └───────┘   └─────────┘
+                    ┌─────────────────┐
+                    │     Gateway     │ ← HTTP API (Port 3000)
+                    │   (REST API)    │
+                    │  + Clerk Auth   │
+                    │  + MongoDB      │
+                    └────────┬────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                  │
+          ▼                  ▼                  ▼
+    ┌───────────┐     ┌───────────┐     ┌───────────┐
+    │  Catalog  │     │   Media   │     │  Search   │
+    │   (RMQ)   │     │   (RMQ)   │     │   (RMQ)   │
+    └───────────┘     └───────────┘     └───────────┘
 ```
 
 ### Services
 
-| Service | Transport | Default Port | Description |
-|---------|-----------|--------------|-------------|
-| Gateway | HTTP | 3000 | REST API entry point |
-| Catalog | RabbitMQ | - | Product catalog service |
-| Media | TCP | 4012 | Media handling service |
-| Search | TCP | 4013 | Search functionality |
+| Service | Transport | Description |
+|---------|-----------|-------------|
+| Gateway | HTTP | REST API entry point with auth |
+| Catalog | RabbitMQ | Product catalog service |
+| Media | RabbitMQ | Media handling service |
+| Search | RabbitMQ | Search functionality |
+
+## Features
+
+- **Authentication**: Clerk JWT authentication
+- **Authorization**: Role-based access control (user/admin)
+- **Database**: MongoDB with Mongoose
+- **Microservices**: RabbitMQ message broker
 
 ## Prerequisites
 
 - Node.js (v18+)
-- RabbitMQ (for Catalog service)
+- RabbitMQ
+- MongoDB
 
 ## Installation
 
@@ -45,17 +55,22 @@ Create a `.env` file in the root directory:
 
 ```env
 # Gateway
-PORT=3000
+GATEWAY_PORT=3000
 
-# Catalog Service (RabbitMQ)
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/nestjs-microservices
+
+# Clerk Authentication
+CLERK_SECRET_KEY=sk_test_xxxxx
+CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+
+# RabbitMQ
 RABBITMQ_URL=amqp://localhost:5672
+
+# Queues
 CATALOG_QUEUE=catalog_queue
-
-# Media Service (TCP)
-MEDIA_TCP_PORT=4012
-
-# Search Service (TCP)
-SEARCH_TCP_PORT=4013
+MEDIA_QUEUE=media_queue
+SEARCH_QUEUE=search_queue
 ```
 
 ## Running the Services
@@ -76,30 +91,34 @@ npx nest start media --watch
 npx nest start search --watch
 ```
 
-### Production Mode
+## Authentication
 
-```bash
-# Build all services
-npm run build
+### Protected Routes
+All routes require JWT authentication by default.
 
-# Start individual services
-npm run start:prod gateway
-npm run start:prod catalog
-npm run start:prod media
-npm run start:prod search
+### Public Routes
+Use the `@Public()` decorator:
+```typescript
+@Get('health')
+@Public()
+health() { }
 ```
 
-## Testing
+### Admin Only Routes
+Use the `@AdminOnly()` decorator:
+```typescript
+@Delete(':id')
+@AdminOnly()
+delete() { }
+```
 
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
+### Access Current User
+Use the `@CurrentUser()` decorator:
+```typescript
+@Get('profile')
+getProfile(@CurrentUser() user: UserContext) {
+  return user;
+}
 ```
 
 ## Project Structure
@@ -107,12 +126,30 @@ npm run test:cov
 ```
 nestjs-microservices/
 ├── apps/
-│   ├── gateway/          # HTTP API Gateway
-│   ├── catalog/          # Catalog microservice (RabbitMQ)
-│   ├── media/            # Media microservice (TCP)
-│   └── search/           # Search microservice (TCP)
-├── libs/                 # Shared libraries
+│   ├── gateway/
+│   │   └── src/
+│   │       ├── auth/           # Authentication (Clerk)
+│   │       │   ├── auth.service.ts
+│   │       │   ├── jwt-auth-guard.ts
+│   │       │   ├── public.decorator.ts
+│   │       │   ├── admin.decorator.ts
+│   │       │   └── current-user.decorator.ts
+│   │       └── users/          # User management
+│   │           ├── user.schema.ts
+│   │           ├── user.services.ts
+│   │           └── user.module.ts
+│   ├── catalog/                # Catalog microservice
+│   ├── media/                  # Media microservice
+│   └── search/                 # Search microservice
+├── libs/                       # Shared libraries
 └── package.json
+```
+
+## API Endpoints
+
+### Health Check
+```
+GET /health - Check all services status (Public)
 ```
 
 ## License
