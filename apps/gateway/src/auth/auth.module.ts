@@ -3,6 +3,7 @@ import { UserModule } from "../users/user.module";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtAuthGuard } from "./jwt-auth-guard";
 import { AuthService } from "./auth.service";
+import { UserSchema } from "../users/user.schema";
 
 @Module({
     imports: [
