@@ -21,6 +21,13 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "paths": {}
+    "paths": {
+      "\\/rpc": [
+        "libs/rpc/src"
+      ],
+      "\\/rpc/*": [
+        "libs/rpc/src/*"
+      ]
+    }
   }
 }
