@@ -1,7 +1,8 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { ValidationPipe } from "@nestjs/common";
+import { INestMicroservice } from "@nestjs/common";
 import { RpcAllExceptionFilter } from "./rpc-exception.filters";
 
-export function applyToMicroserviceLayer(app: INestApplication) {
+export function applyToMicroserviceLayer(app: INestMicroservice) {
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,

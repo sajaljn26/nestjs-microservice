@@ -1,2 +1,9 @@
 export * from './rpc.module';
-export * from './rpc.service';
+export * from './rpc.setup';
+export * from './rpc.types';
+export * from './rpc.helpers'
+export * from './rpc-exception.filters'
+
+export * from './http/rpc-error.mapper';
+
+

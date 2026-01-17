@@ -22,10 +22,10 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "\\/rpc": [
+      "@app/rpc": [
         "libs/rpc/src"
       ],
-      "\\/rpc/*": [
+      "@app/rpc/*": [
         "libs/rpc/src/*"
       ]
     }
